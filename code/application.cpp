@@ -465,17 +465,25 @@ Application::Keyboard
 */
 void Application::Keyboard(int key, int scancode, int action, int modifiers)
 {
+    // 按R键重置场景
     if (GLFW_KEY_R == key && GLFW_RELEASE == action)
     {
         m_scene->Reset();
     }
+    // 按T键切换运行暂停状态
     if (GLFW_KEY_T == key && GLFW_RELEASE == action)
     {
         m_isPaused = !m_isPaused;
     }
+    // 暂停状态下，按Y键逐帧运行
     if (GLFW_KEY_Y == key && (GLFW_PRESS == action || GLFW_REPEAT == action))
     {
         m_stepFrame = m_isPaused && !m_stepFrame;
+    }
+    // 按下ESC时退出
+    if (GLFW_KEY_ESCAPE == key && GLFW_RELEASE == action)
+    {
+        Cleanup();
     }
 }
 
