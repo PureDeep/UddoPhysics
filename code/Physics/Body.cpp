@@ -105,3 +105,25 @@ void Body::ApplyImpulseLinear(const Vec3& impulse)
 
     m_linearVelocity += impulse * m_inverseMass;
 }
+
+void Body::ApplyImpulseAngular(const Vec3& impulse)
+{
+    if (m_inverseMass == 0.0f)
+    {
+        return;
+    }
+
+    // L = I w = r x p
+    // dL = I dw = r x J
+    // => dw = I^-1 * ( r x J )
+
+    m_angularVelocity += GetInverseInertiaTensorWorldSpace() * impulse;
+
+    // 30 rad/s is fast enough.
+    const float maxAngularSpeed = 30.0f;
+    if (m_angularVelocity.GetLengthSqr() > maxAngularSpeed * maxAngularSpeed)
+    {
+        m_angularVelocity.Normalize();
+        m_angularVelocity *= maxAngularSpeed;
+    }
+}
