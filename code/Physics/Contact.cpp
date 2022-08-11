@@ -16,10 +16,15 @@ void ResolveContact(contact_t& contact)
     const float inv_mass_a = body_a->m_inverseMass;
     const float inv_mass_b = body_b->m_inverseMass;
 
+    const float elasticity_a = body_a->m_elasticity;
+    const float elasticity_b = body_b->m_elasticity;
+    const float elasticity = elasticity_a * elasticity_b;
+
     // 计算碰撞处的法线向量
     const Vec3& n = contact.normal;
     const Vec3 v_ab = body_a->m_linearVelocity - body_b->m_linearVelocity;
-    const float impulse_j = -2.0f * v_ab.Dot(n) / (inv_mass_a + inv_mass_b); // v_ab.Dot(n)得到相对速度沿碰撞接触点法向的分量
+    // v_ab.Dot(n)得到相对速度沿碰撞接触点法向的分量
+    const float impulse_j = -(1.0f + elasticity) * v_ab.Dot(n) / (inv_mass_a + inv_mass_b);
     const Vec3 vector_impulse_j = n * impulse_j;
 
     body_a->ApplyImpulseLinear(vector_impulse_j * 1.0f);
