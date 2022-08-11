@@ -599,7 +599,7 @@ void Application::UpdateUniforms()
         // Update the uniform buffer with the camera information
         //
         {
-            Vec3 camPos = Vec3(10, 0, 5) * 1.25f;
+            Vec3 camPos = Vec3(100, 0, 5) * 1.25f;
             auto camLookAt = Vec3(0, 0, 1);
             auto camUp = Vec3(0, 0, 1);
 
@@ -618,7 +618,7 @@ void Application::UpdateUniforms()
 
             const float zNear = 0.1f;
             const float zFar = 1000.0f;
-            const float fovy = 45.0f;
+            const float fovy = 90.0f;
             const float aspect = static_cast<float>(windowHeight) / static_cast<float>(windowWidth);
             camera.matProj.PerspectiveVulkan(fovy, aspect, zNear, zFar);
             camera.matProj = camera.matProj.Transpose();

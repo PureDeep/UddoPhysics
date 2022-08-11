@@ -14,17 +14,19 @@
 Scene
 ====================================================
 */
-class Scene {
+class Scene
+{
 public:
-	Scene() { m_bodies.reserve( 128 ); }
-	~Scene();
+    Scene() { m_bodies.reserve(128); }
+    ~Scene();
 
-	void Reset();
-	void Initialize();
-	void Update( const float dt_sec );	
+    void Reset();
+    void Initialize();
+    void Update(float dt_sec);
 
-	std::vector< Body > m_bodies;
-	std::vector< Constraint * >	m_constraints;
-	ManifoldCollector m_manifolds;
+    static bool Intersect(const Body* body_a, const Body* body_b);
+
+    std::vector<Body> m_bodies;
+    std::vector<Constraint*> m_constraints;
+    ManifoldCollector m_manifolds;
 };
-
