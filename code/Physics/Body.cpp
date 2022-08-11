@@ -59,3 +59,21 @@ Vec3 Body::BodySpaceToWorldSpace(const Vec3& pt) const
     Vec3 world_space = GetCenterOfMassWorldSpace() + m_orientation.RotatePoint(pt);
     return world_space;
 }
+
+/**
+ * \brief 计算冲量对body速度的影响
+ * \param impulse 作用在body上的冲量
+ */
+void Body::ApplyImpulseLinear(const Vec3& impulse)
+{
+    if (m_inverseMass == 0.0f)
+        return;
+
+    // J : the change of momentum, 动量的改变量
+    // p = mv
+    // dp = F * t
+    // J = m * dv
+    // => dv = j / m
+
+    m_linearVelocity += impulse * m_inverseMass;
+}
