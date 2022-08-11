@@ -16,18 +16,20 @@
 Body
 ====================================================
 */
-class Body {
+class Body
+{
 public:
-	Body();
+    Body();
 
-	Vec3		m_position;
-	Quat		m_orientation;
+    Vec3 m_position;
+    Quat m_orientation;
+    Vec3 m_linearvelocity;
 
-	Shape *		m_shape;
+    Shape* m_shape;
 
-	Vec3 GetCenterOfMassWorldSpace() const;
-	Vec3 GetCenterOfMassModelSpace() const;
+    Vec3 GetCenterOfMassWorldSpace() const;
+    Vec3 GetCenterOfMassModelSpace() const;
 
-	Vec3 WorldSpaceToBodySpace(const Vec3 & pt) const;
-	Vec3 BodySpaceToWorldSpace(const Vec3 & pt) const;
+    Vec3 WorldSpaceToBodySpace(const Vec3& pt) const;
+    Vec3 BodySpaceToWorldSpace(const Vec3& pt) const;
 };

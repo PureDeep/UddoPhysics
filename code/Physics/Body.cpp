@@ -9,9 +9,10 @@ Body::Body
 ====================================================
 */
 Body::Body() :
-m_position( 0.0f ),
-m_orientation( 0.0f, 0.0f, 0.0f, 1.0f ),
-m_shape( NULL ) {
+    m_position(0.0f),
+    m_orientation(0.0f, 0.0f, 0.0f, 1.0f),
+    m_shape(nullptr)
+{
 }
 
 /**
@@ -42,7 +43,7 @@ Vec3 Body::GetCenterOfMassModelSpace() const
  */
 Vec3 Body::WorldSpaceToBodySpace(const Vec3& pt) const
 {
-    vec3 tmp = pt - GetCenterOfMassWorldSpace(); // 生成一个世界坐标系下的质心指向形参的零时变量tmp
+    Vec3 tmp = pt - GetCenterOfMassWorldSpace(); // 生成一个世界坐标系下的质心指向形参的零时变量tmp
     const Quat inverse_orient = m_orientation.Inverse(); // 获得反向旋转
     Vec3 body_space = inverse_orient.RotatePoint(tmp);
     return body_space;
