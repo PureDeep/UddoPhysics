@@ -24,8 +24,6 @@ public:
     void Initialize();
     void Update(float dt_sec);
 
-    static bool Intersect(const Body* body_a, const Body* body_b);
-
     std::vector<Body> m_bodies;
     std::vector<Constraint*> m_constraints;
     ManifoldCollector m_manifolds;
