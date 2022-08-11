@@ -65,6 +65,30 @@ Vec3 Body::BodySpaceToWorldSpace(const Vec3& pt) const
 }
 
 /**
+ * \brief 获得本地坐标系下的反惯性张量
+ * \return 本地坐标系下的反惯性张量
+ */
+Mat3 Body::GetInverseInertiaTensorBodySpace() const
+{
+    Mat3 inertia_tensor = m_shape->InertiaTensor();
+    Mat3 inv_inertia_tensor = inertia_tensor.Inverse() * m_inverseMass;
+    return inv_inertia_tensor;
+}
+
+/**
+ * \brief 获得世界坐标系下的反惯性张量
+ * \return 世界坐标系下的反惯性张量
+ */
+Mat3 Body::GetInverseInertiaTensorWorldSpace() const
+{
+    Mat3 inertia_tensor = m_shape->InertiaTensor();
+    Mat3 inv_inertia_tensor = inertia_tensor.Inverse() * m_inverseMass;
+    Mat3 orient = m_orientation.ToMat3();
+    inv_inertia_tensor = orient * inv_inertia_tensor * orient.Transpose();
+    return inv_inertia_tensor;
+}
+
+/**
  * \brief 计算冲量对body速度的影响
  * \param impulse 作用在body上的冲量
  */

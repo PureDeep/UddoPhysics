@@ -34,5 +34,9 @@ public:
     Vec3 WorldSpaceToBodySpace(const Vec3& pt) const;
     Vec3 BodySpaceToWorldSpace(const Vec3& pt) const;
 
+    // 反惯性张量
+    Mat3 GetInverseInertiaTensorBodySpace() const;
+    Mat3 GetInverseInertiaTensorWorldSpace() const;
+
     void ApplyImpulseLinear(const Vec3& impulse);
 };
