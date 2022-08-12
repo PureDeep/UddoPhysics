@@ -43,7 +43,7 @@ void ResolveContact(contact_t& contact)
 
     // 计算碰撞产生的冲量
     // v_ab.Dot(n)得到相对速度沿碰撞接触点法向的分量
-    const float impulse_j = -(1.0f + elasticity) * v_ab.Dot(n) / (inv_mass_a + inv_mass_b);
+    const float impulse_j = -(1.0f + elasticity) * v_ab.Dot(n) / (inv_mass_a + inv_mass_b + angular_factor);
     const Vec3 vector_impulse_j = n * impulse_j;
 
     body_a->ApplyImpulse(pt_a, vector_impulse_j * 1.0f);
