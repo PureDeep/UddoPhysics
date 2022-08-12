@@ -28,6 +28,7 @@ public:
 
     float m_inverseMass;
     float m_elasticity;
+    float m_friction;
     Shape* m_shape;
 
     Vec3 GetCenterOfMassWorldSpace() const;

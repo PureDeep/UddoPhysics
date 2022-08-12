@@ -39,6 +39,7 @@ void ResolveContact(contact_t& contact)
     const Vec3 vel_a = body_a->m_linearVelocity + body_a->m_angularVelocity.Cross(ra);
     const Vec3 vel_b = body_b->m_linearVelocity + body_b->m_angularVelocity.Cross(rb);
 
+    // 速度差
     const Vec3 v_ab = vel_a - vel_b;
 
     // 计算碰撞产生的冲量
@@ -49,11 +50,38 @@ void ResolveContact(contact_t& contact)
     body_a->ApplyImpulse(pt_a, vector_impulse_j * 1.0f);
     body_b->ApplyImpulse(pt_b, vector_impulse_j * -1.0f);
 
+    // 计算摩擦力产生的冲量
+    const float friction_a = body_a->m_friction;
+    const float friction_b = body_b->m_friction;
+    const float friction = friction_a * friction_b;
+
+    // 速度差在碰撞点所处表面的法线分量
+    const Vec3 vel_norm = n * n.Dot(v_ab);
+
+    // 速度差在碰撞点所处表面的切线分量
+    const Vec3 vel_tang = v_ab - vel_norm;
+
+    // 获得相对于另一个物体的切向速度分量
+    Vec3 relative_vel_tang = vel_tang;
+    relative_vel_tang.Normalize();
+
+    const Vec3 inertia_a = (inv_inertia_world_a * ra.Cross(relative_vel_tang)).Cross(ra);
+    const Vec3 inertia_b = (inv_inertia_world_b * rb.Cross(relative_vel_tang)).Cross(rb);
+    const float inv_inertia = (inertia_a + inertia_b).Dot(relative_vel_tang);
+
+    // 计算摩擦力产生的切向冲量
+    const float reduced_mass = 1.0f / (body_a->m_inverseMass + body_b->m_inverseMass + inv_inertia);
+    const Vec3 impulse_friction = vel_tang * reduced_mass * friction;
+
+    // 施加摩擦力产生的冲量
+    body_a->ApplyImpulse(pt_a, impulse_friction * -1.0f);
+    body_b->ApplyImpulse(pt_b, impulse_friction * 1.0f);
+
     // Distance project . 阻止相撞的两个物体相互穿透
     const float t_a = body_a->m_inverseMass / (body_a->m_inverseMass + body_b->m_inverseMass);
     const float t_b = body_b->m_inverseMass / (body_a->m_inverseMass + body_b->m_inverseMass);
 
-    const Vec3 ds = contact.ptOnB_WorldSpace - contact.ptOnA_WorldSpace;
+    const Vec3 ds = pt_b - pt_a;
     body_a->m_position += ds * t_a;
     body_b->m_position -= ds * t_b;
 }
