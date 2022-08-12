@@ -40,6 +40,9 @@ public:
     Mat3 GetInverseInertiaTensorBodySpace() const;
     Mat3 GetInverseInertiaTensorWorldSpace() const;
 
+    void ApplyImpulse(const Vec3& impulsePoint, const Vec3& impulse);
     void ApplyImpulseLinear(const Vec3& impulse);
     void ApplyImpulseAngular(const Vec3& impulse);
+
+    void Update(float dt_sec);
 };

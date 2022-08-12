@@ -88,8 +88,24 @@ Mat3 Body::GetInverseInertiaTensorWorldSpace() const
     return inv_inertia_tensor;
 }
 
+void Body::ApplyImpulse(const Vec3& impulsePoint, const Vec3& impulse)
+{
+    if (m_inverseMass == 0.0f)
+    {
+        return;
+    }
+
+    // 先计算冲量对线速度的影响
+    ApplyImpulseLinear(impulse);
+
+    // 再计算冲量对角速度的影响
+    const Vec3& center_of_mass = GetCenterOfMassWorldSpace();
+    const Vec3& dL = impulsePoint - center_of_mass;
+    ApplyImpulseAngular(dL.Cross(impulse));
+}
+
 /**
- * \brief 计算冲量对body速度的影响
+ * \brief 计算冲量对body线速度的影响
  * \param impulse 作用在body上的冲量
  */
 void Body::ApplyImpulseLinear(const Vec3& impulse)
@@ -106,6 +122,10 @@ void Body::ApplyImpulseLinear(const Vec3& impulse)
     m_linearVelocity += impulse * m_inverseMass;
 }
 
+/**
+ * \brief 计算冲量对body角速度的影响
+ * \param impulse 作用在body上的冲量
+ */
 void Body::ApplyImpulseAngular(const Vec3& impulse)
 {
     if (m_inverseMass == 0.0f)
@@ -126,4 +146,31 @@ void Body::ApplyImpulseAngular(const Vec3& impulse)
         m_angularVelocity.Normalize();
         m_angularVelocity *= maxAngularSpeed;
     }
+}
+
+void Body::Update(float dt_sec)
+{
+    // 更新线速度
+    m_position += m_linearVelocity * dt_sec;
+
+    // 更新角速度
+    const Vec3 position_cm = GetCenterOfMassWorldSpace();
+    Vec3 cm_to_pos = m_position - position_cm;
+
+    // Total Torque = External Applied Torque + Internal Torque
+    // T = T_external + omega x I * omega
+    // T_external = 0 because it was applied in the collision response function
+    // T = Ia = w x I * w
+    // a = I^-1 (w x I * w)
+    const Mat3 orientation = m_orientation.ToMat3();
+    Mat3 inertia_tensor = orientation * m_shape->InertiaTensor() * orientation.Transpose();
+    Vec3 alpha = inertia_tensor.Inverse() * (m_angularVelocity.Cross(inertia_tensor * m_angularVelocity));
+    m_angularVelocity += alpha * dt_sec;
+
+    Vec3 d_angle = m_angularVelocity * dt_sec;
+    auto d_q = Quat(d_angle, d_angle.GetMagnitude());
+    m_orientation = d_q * m_orientation;
+    m_orientation.Normalize();
+
+    m_position = position_cm + d_q.RotatePoint(cm_to_pos);
 }
