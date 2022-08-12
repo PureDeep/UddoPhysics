@@ -116,7 +116,7 @@ void Scene::Update(const float dt_sec)
     const int max_contacts = m_bodies.size() * m_bodies.size();
     auto contacts = static_cast<contact_t*>(alloca(sizeof(contact_t) * max_contacts)); // 用于存放contacts
 
-    // 检测碰撞
+    // 检测碰撞，收集起来
     for (int i = 0; i < m_bodies.size(); i++)
     {
         for (int j = i + 1; j < m_bodies.size(); j++)
@@ -138,12 +138,13 @@ void Scene::Update(const float dt_sec)
         }
     }
 
-    // 按照碰撞发生的先后顺序对contacts排序
+    // 按照碰撞发生的先后顺序（time of impact）对contacts排序
     if (num_contacts > 1)
     {
         qsort(contacts, num_contacts, sizeof(contact_t), CompareContacts);
     }
 
+    // 按照时间排序好的contacts顺序解算contact
     // 每次都只模拟到下一次碰撞的情况，然后重新解算碰撞，跟新contact
     float accumulated_time = 0.0f;
     for (int i = 0; i < num_contacts; i++)
