@@ -14,7 +14,7 @@ struct contact_t
 
     Vec3 normal; // In World Space coordinates
     float separationDistance; // 分离距离，未穿透为正，穿透为负。positive when non-penetrating, negative when penetrating
-    float timeOfImpact;
+    float timeOfImpact; // 发生碰撞的时间
 
     Body* bodyA;
     Body* bodyB;

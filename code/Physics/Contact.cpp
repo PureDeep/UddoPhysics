@@ -39,7 +39,7 @@ void ResolveContact(contact_t& contact)
     const Vec3 vel_a = body_a->m_linearVelocity + body_a->m_angularVelocity.Cross(ra);
     const Vec3 vel_b = body_b->m_linearVelocity + body_b->m_angularVelocity.Cross(rb);
 
-    // 速度差
+    // 速度差（相对速度）
     const Vec3 v_ab = vel_a - vel_b;
 
     // 计算碰撞产生的冲量
