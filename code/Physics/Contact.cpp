@@ -20,15 +20,34 @@ void ResolveContact(contact_t& contact)
     const float elasticity_b = body_b->m_elasticity;
     const float elasticity = elasticity_a * elasticity_b;
 
+    const Mat3 inv_inertia_world_a = body_a->GetInverseInertiaTensorWorldSpace();
+    const Mat3 inv_inertia_world_b = body_b->GetInverseInertiaTensorWorldSpace();
+
+    const Vec3 pt_a = contact.ptOnA_WorldSpace;
+    const Vec3 pt_b = contact.ptOnB_WorldSpace;
+
     // 计算碰撞处的法线向量
     const Vec3& n = contact.normal;
-    const Vec3 v_ab = body_a->m_linearVelocity - body_b->m_linearVelocity;
+
+    const Vec3 ra = pt_a - body_a->GetCenterOfMassWorldSpace();
+    const Vec3 rb = pt_b - body_b->GetCenterOfMassWorldSpace();
+
+    const Vec3 angular_j_a = (inv_inertia_world_a * ra.Cross(n)).Cross(ra);
+    const Vec3 angular_j_b = (inv_inertia_world_b * rb.Cross(n)).Cross(rb);
+    const float angular_factor = (angular_j_a + angular_j_b).Dot(n);
+
+    const Vec3 vel_a = body_a->m_linearVelocity + body_a->m_angularVelocity.Cross(ra);
+    const Vec3 vel_b = body_b->m_linearVelocity + body_b->m_angularVelocity.Cross(rb);
+
+    const Vec3 v_ab = vel_a - vel_b;
+
+    // 计算碰撞产生的冲量
     // v_ab.Dot(n)得到相对速度沿碰撞接触点法向的分量
     const float impulse_j = -(1.0f + elasticity) * v_ab.Dot(n) / (inv_mass_a + inv_mass_b);
     const Vec3 vector_impulse_j = n * impulse_j;
 
-    body_a->ApplyImpulseLinear(vector_impulse_j * 1.0f);
-    body_b->ApplyImpulseLinear(vector_impulse_j * -1.0f);
+    body_a->ApplyImpulse(pt_a, vector_impulse_j * 1.0f);
+    body_b->ApplyImpulse(pt_b, vector_impulse_j * -1.0f);
 
     // Distance project . 阻止相撞的两个物体相互穿透
     const float t_a = body_a->m_inverseMass / (body_a->m_inverseMass + body_b->m_inverseMass);
