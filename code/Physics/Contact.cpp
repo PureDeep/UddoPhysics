@@ -78,10 +78,14 @@ void ResolveContact(contact_t& contact)
     body_b->ApplyImpulse(pt_b, impulse_friction * 1.0f);
 
     // Distance project . 阻止相撞的两个物体相互穿透
-    const float t_a = body_a->m_inverseMass / (body_a->m_inverseMass + body_b->m_inverseMass);
-    const float t_b = body_b->m_inverseMass / (body_a->m_inverseMass + body_b->m_inverseMass);
+    if (contact.timeOfImpact == 0.0f)
+    {
+        const Vec3 ds = pt_b - pt_a;
 
-    const Vec3 ds = pt_b - pt_a;
-    body_a->m_position += ds * t_a;
-    body_b->m_position -= ds * t_b;
+        const float t_a = inv_mass_a / (inv_mass_a + inv_mass_b);
+        const float t_b = inv_mass_b / (inv_mass_a + inv_mass_b);
+
+        body_a->m_position += ds * t_a;
+        body_b->m_position -= ds * t_b;
+    }
 }

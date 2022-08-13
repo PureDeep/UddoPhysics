@@ -60,7 +60,7 @@ void Scene::Initialize()
     body.m_shape = new ShapeSphere(1.0f);
     m_bodies.push_back(body);
 
-    body.m_position = Vec3(3, 0, 10);
+    body.m_position = Vec3(1, 0, 50);
     body.m_orientation = Quat(0, 0, 0, 1);
     body.m_inverseMass = 1.0f;
     body.m_elasticity = 0.5f;
@@ -68,12 +68,12 @@ void Scene::Initialize()
     body.m_shape = new ShapeSphere(1.0f);
     m_bodies.push_back(body);
 
-    body.m_position = Vec3(0, 0, -50);
+    body.m_position = Vec3(0, 0, -10000);
     body.m_orientation = Quat(0, 0, 0, 1);
     body.m_inverseMass = 0.0f;
     body.m_elasticity = 1.0f;
     body.m_friction = 0.0f;
-    body.m_shape = new ShapeSphere(50.0f);
+    body.m_shape = new ShapeSphere(10000.0f);
     m_bodies.push_back(body);
 
     // TODO: Add code
