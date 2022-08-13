@@ -52,21 +52,22 @@ Scene::Initialize
 void Scene::Initialize()
 {
     Body body;
-    body.m_position = Vec3(1, 0, 10);
-    body.m_orientation = Quat(0, 0, 0, 1);
-    body.m_inverseMass = 1.0f;
-    body.m_elasticity = 0.5f;
-    body.m_friction = 0.5f;
-    body.m_shape = new ShapeSphere(1.0f);
-    m_bodies.push_back(body);
 
-    body.m_position = Vec3(1, 0, 50);
-    body.m_orientation = Quat(0, 0, 0, 1);
-    body.m_inverseMass = 1.0f;
-    body.m_elasticity = 0.5f;
-    body.m_friction = 0.5f;
-    body.m_shape = new ShapeSphere(1.0f);
-    m_bodies.push_back(body);
+    int x = 9, y = 9;
+
+    for (int i = 0; i < x; i++)
+    {
+        for (int j = 0; j < y; j++)
+        {
+            body.m_position = Vec3(i * 2, j * 2, 10);
+            body.m_orientation = Quat(0, 0, 0, 1);
+            body.m_inverseMass = 1.0f;
+            body.m_elasticity = 0.5f;
+            body.m_friction = 0.5f;
+            body.m_shape = new ShapeSphere(1.0f);
+            m_bodies.push_back(body);
+        }
+    }
 
     body.m_position = Vec3(0, 0, -10000);
     body.m_orientation = Quat(0, 0, 0, 1);
@@ -103,6 +104,7 @@ Scene::Update
 */
 void Scene::Update(const float dt_sec)
 {
+    // Gravity
     for (int i = 0; i < m_bodies.size(); i++)
     {
         Body* body = &m_bodies[i];
@@ -112,29 +114,33 @@ void Scene::Update(const float dt_sec)
         body->ApplyImpulseLinear(impulse_Gravity);
     }
 
+    // BroadPhase
+    std::vector<collisionPair_t> collision_pairs;
+    BroadPhase(m_bodies.data(), static_cast<int>(m_bodies.size()), collision_pairs, dt_sec);
+
+
+    // NarrowPhase
     int num_contacts = 0;
     const int max_contacts = m_bodies.size() * m_bodies.size();
     auto contacts = static_cast<contact_t*>(alloca(sizeof(contact_t) * max_contacts)); // 用于存放contacts
 
-    // 检测碰撞，收集起来
-    for (int i = 0; i < m_bodies.size(); i++)
+    for (int i = 0; i < collision_pairs.size(); i++)
     {
-        for (int j = i + 1; j < m_bodies.size(); j++)
+        const collisionPair_t& pair = collision_pairs[i];
+        Body* body_a = &m_bodies[pair.a];
+        Body* body_b = &m_bodies[pair.b];
+
+        // 跳过质量为0的物体（不可动）
+        if (body_a->m_inverseMass == 0.0f && body_b->m_inverseMass == 0.0f)
         {
-            Body* body_a = &m_bodies[i];
-            Body* body_b = &m_bodies[j];
+            continue;
+        }
 
-            if (body_a->m_inverseMass == 0.0f && body_b->m_inverseMass == 0.0f)
-            {
-                continue;
-            }
-
-            contact_t contact;
-            if (Intersect(body_a, body_b, dt_sec, contact))
-            {
-                contacts[num_contacts] = contact;
-                num_contacts++;
-            }
+        contact_t contact;
+        if (Intersect(body_a, body_b, dt_sec, contact))
+        {
+            contacts[num_contacts] = contact;
+            num_contacts++;
         }
     }
 
@@ -144,26 +150,16 @@ void Scene::Update(const float dt_sec)
         qsort(contacts, num_contacts, sizeof(contact_t), CompareContacts);
     }
 
-    // 按照时间排序好的contacts顺序解算contact
-    // 每次都只模拟到下一次碰撞的情况，然后重新解算碰撞，跟新contact
+    // 施加impluse
     float accumulated_time = 0.0f;
     for (int i = 0; i < num_contacts; i++)
     {
         contact_t& contact = contacts[i];
         const float dt = contact.timeOfImpact - accumulated_time;
 
-        Body* body_a = contact.bodyA;
-        Body* body_b = contact.bodyB;
-
-        if (body_a->m_inverseMass == 0.0f && body_b->m_inverseMass == 0.0f)
-        {
-            continue;
-        }
-
         // 更新位置
         for (int j = 0; j < m_bodies.size(); j++)
         {
-            // Position update
             m_bodies[j].Update(dt);
         }
 

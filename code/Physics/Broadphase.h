@@ -5,17 +5,29 @@
 #include "Body.h"
 #include <vector>
 
-
-struct collisionPair_t {
-	int a;
-	int b;
-
-	bool operator == ( const collisionPair_t & rhs ) const {
-		return ( ( ( a == rhs.a ) && ( b == rhs.b ) ) || ( ( a == rhs.b ) && ( b == rhs.a ) ) );
-	}
-	bool operator != ( const collisionPair_t & rhs ) const {
-		return !( *this == rhs );
-	}
+struct psuedoBody_t
+{
+    int id;
+    float value;
+    bool ismin;
 };
 
-void BroadPhase( const Body * bodies, const int num, std::vector< collisionPair_t > & finalPairs, const float dt_sec );
+
+struct collisionPair_t
+{
+    int a;
+    int b;
+
+    bool operator ==(const collisionPair_t& rhs) const
+    {
+        return (((a == rhs.a) && (b == rhs.b)) || ((a == rhs.b) && (b == rhs.a)));
+    }
+
+    bool operator !=(const collisionPair_t& rhs) const
+    {
+        return !(*this == rhs);
+    }
+};
+
+
+void BroadPhase(const Body* bodies, int num, std::vector<collisionPair_t>& finalPairs, float dt_sec);
