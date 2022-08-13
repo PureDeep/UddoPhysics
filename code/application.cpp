@@ -458,6 +458,17 @@ void Application::OnKeyboard(GLFWwindow* window, int key, int scancode, int acti
     application->Keyboard(key, scancode, action, modifiers);
 }
 
+void Application::PrintfFPS(float dt_us)
+{
+    char title[256];
+    title[255] = '\0';
+
+    snprintf(title, 255,
+             "UddoPhysics [FPS: %3.2f]", 1000.0f / ((dt_us * 0.001f)));
+
+    glfwSetWindowTitle(m_glfwWindow, title);
+}
+
 /*
 ====================================================
 Application::Keyboard
@@ -512,7 +523,7 @@ void Application::MainLoop()
         }
         timeLastFrame = time;
         printf("\ndt_ms: %.1f    ", dt_us * 0.001f);
-
+        PrintfFPS(dt_us);
         // Get User Input
         glfwPollEvents();
 
