@@ -20,9 +20,7 @@ Vec3 ShapeSphere::Support(const Vec3& dir, const Vec3& pos, const Quat& orient, 
 {
     Vec3 supportPt;
 
-    // TODO: Add code
-
-    return supportPt;
+    return (pos + dir * (m_radius + bias));
 }
 
 /*

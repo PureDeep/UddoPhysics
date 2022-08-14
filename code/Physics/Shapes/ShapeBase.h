@@ -32,8 +32,10 @@ public:
 
     virtual shapeType_t GetType() const = 0;
 
+    // 用于给出凸包上在某一特定方向上最远的点
     virtual Vec3 Support(const Vec3& dir, const Vec3& pos, const Quat& orient, float bias) const = 0;
 
+    // 用于持续性检测，只对非球面形状有效。
     virtual float FastestLinearSpeed(const Vec3& angularVelocity, const Vec3& dir) const { return 0.0f; }
 
 protected:
