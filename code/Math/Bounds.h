@@ -38,8 +38,11 @@ public:
     void Expand(const Vec3& rhs);
     void Expand(const Bounds& rhs);
 
+    // 返回X边长度
     float WidthX() const { return maxs.x - mins.x; }
+    // 返回Y边长度
     float WidthY() const { return maxs.y - mins.y; }
+    // 返回Z边长度
     float WidthZ() const { return maxs.z - mins.z; }
 
     // 只需要保存盒体的两个对角，就可以很方便地进行重叠比较

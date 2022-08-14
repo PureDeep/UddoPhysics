@@ -451,6 +451,141 @@ void ExpandConvexHull(std::vector<Vec3>& hull_points, std::vector<tri_t>& hull_t
     RemoveUnreferencedVerts(hull_points, hull_tris);
 }
 
+/**
+ * \brief 判断点是否在包体外
+ * \param pts 凸包的顶点数组
+ * \param tris 凸包的三角形数组
+ * \param pt 指定点
+ * \return 指定点是否在凸包外的结果
+ */
+bool IsExternal(const std::vector<Vec3>& pts, const std::vector<tri_t>& tris, const Vec3& pt)
+{
+    bool is_external = false;
+
+    // 遍历所有三角形，判断该点是否在三角形的前方
+    for (int i = 0; i < tris.size(); i++)
+    {
+        const tri_t tri = tris[i];
+
+        const Vec3& a = pts[tri.a];
+        const Vec3& b = pts[tri.b];
+        const Vec3& c = pts[tri.c];
+
+        // 如果这个点在任何一个三角形的前方，则表示这个点在包体外
+        float dist = DistanceFromTriangle(a, b, c, pt);
+        if (dist > 0.0f)
+        {
+            is_external = true;
+            break;
+        }
+    }
+
+    return is_external;
+}
+
+/**
+ * \brief 计算凸包的质心坐标
+ * \param pts 凸包顶点数组
+ * \param tris 凸包三角形数组
+ * \return 凸包质心坐标
+ */
+Vec3 CalculateCenterOfMass(const std::vector<Vec3>& pts, const std::vector<tri_t>& tris)
+{
+    const int num_samples = 100;
+
+    Bounds bounds;
+    bounds.Expand(pts.data(), pts.size());
+
+    Vec3 cm(0.0f);
+
+    const float dx = bounds.WidthX() / static_cast<float>(num_samples);
+    const float dy = bounds.WidthY() / static_cast<float>(num_samples);
+    const float dz = bounds.WidthZ() / static_cast<float>(num_samples);
+
+    int sample_count = 0;
+
+    for (float x = bounds.mins.x; x < bounds.maxs.x; x += dx)
+    {
+        for (float y = bounds.mins.y; x < bounds.maxs.y; y += dy)
+        {
+            for (float z = bounds.mins.z; x < bounds.maxs.z; z += dz)
+            {
+                Vec3 pt(x, y, z);
+
+                if (IsExternal(pts, tris, pt))
+                {
+                    continue;
+                }
+
+                cm += pt;
+                sample_count ++;
+            }
+        }
+    }
+
+    cm /= static_cast<float>(sample_count);
+    return cm;
+}
+
+/**
+ * \brief 计算惯性张量
+ * \param pts 
+ * \param tris 
+ * \param cm 
+ * \return 
+ */
+Mat3 CalculateInertiaTensor(const std::vector<Vec3>& pts, const std::vector<tri_t>& tris, const Vec3& cm)
+{
+    const int num_samples = 100;
+
+    Bounds bounds;
+    bounds.Expand(pts.data(), static_cast<int>(pts.size()));
+
+    Mat3 tensor;
+    tensor.Zero();
+
+    const float dx = bounds.WidthX() / static_cast<float>(num_samples);
+    const float dy = bounds.WidthY() / static_cast<float>(num_samples);
+    const float dz = bounds.WidthZ() / static_cast<float>(num_samples);
+
+    int sample_count = 0;
+
+    for (float x = bounds.mins.x; x < bounds.maxs.x; x += dx)
+    {
+        for (float y = bounds.mins.y; x < bounds.maxs.y; y += dy)
+        {
+            for (float z = bounds.mins.z; x < bounds.maxs.z; z += dz)
+            {
+                Vec3 pt(x, y, z);
+
+                if (IsExternal(pts, tris, pt))
+                {
+                    continue;
+                }
+
+                pt -= cm;
+
+                tensor.rows[0][0] += pt.y * pt.y + pt.z * pt.z;
+                tensor.rows[1][1] += pt.z * pt.z + pt.x * pt.x;
+                tensor.rows[2][2] += pt.x * pt.x + pt.y * pt.y;
+
+                tensor.rows[0][1] += -1.0f * pt.x * pt.y;
+                tensor.rows[0][2] += -1.0f * pt.x * pt.z;
+                tensor.rows[1][2] += -1.0f * pt.y * pt.z;
+
+                tensor.rows[1][0] += -1.0f * pt.x * pt.y;
+                tensor.rows[2][0] += -1.0f * pt.x * pt.z;
+                tensor.rows[2][1] += -1.0f * pt.y * pt.z;
+
+                sample_count ++;
+            }
+        }
+    }
+
+    tensor *= 1.0f / static_cast<float>(sample_count);
+    return tensor;
+}
+
 /*
 ========================================================================================================
 
