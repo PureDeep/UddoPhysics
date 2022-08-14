@@ -6,6 +6,61 @@
 #include "Physics/Intersections.h"
 #include "Physics/Broadphase.h"
 
+void AddStandardSandBox(std::vector<Body>& bodies)
+{
+    Body body;
+
+    body.m_position = Vec3(0, 0, 0);
+    body.m_orientation = Quat(0, 0, 0, 1);
+    body.m_linearVelocity.Zero();
+    body.m_angularVelocity.Zero();
+    body.m_inverseMass = 0.0f;
+    body.m_elasticity = 0.5f;
+    body.m_friction = 0.5f;
+    body.m_shape = new ShapeBox(g_boxGround, sizeof(g_boxGround) / sizeof(Vec3));
+    bodies.push_back(body);
+
+    body.m_position = Vec3(50, 0, 0);
+    body.m_orientation = Quat(0, 0, 0, 1);
+    body.m_linearVelocity.Zero();
+    body.m_angularVelocity.Zero();
+    body.m_inverseMass = 0.0f;
+    body.m_elasticity = 0.5f;
+    body.m_friction = 0.0f;
+    body.m_shape = new ShapeBox(g_boxWall0, sizeof(g_boxWall0) / sizeof(Vec3));
+    bodies.push_back(body);
+
+    body.m_position = Vec3(-50, 0, 0);
+    body.m_orientation = Quat(0, 0, 0, 1);
+    body.m_linearVelocity.Zero();
+    body.m_angularVelocity.Zero();
+    body.m_inverseMass = 0.0f;
+    body.m_elasticity = 0.5f;
+    body.m_friction = 0.0f;
+    body.m_shape = new ShapeBox(g_boxWall0, sizeof(g_boxWall0) / sizeof(Vec3));
+    bodies.push_back(body);
+
+    body.m_position = Vec3(0, 25, 0);
+    body.m_orientation = Quat(0, 0, 0, 1);
+    body.m_linearVelocity.Zero();
+    body.m_angularVelocity.Zero();
+    body.m_inverseMass = 0.0f;
+    body.m_elasticity = 0.5f;
+    body.m_friction = 0.0f;
+    body.m_shape = new ShapeBox(g_boxWall1, sizeof(g_boxWall1) / sizeof(Vec3));
+    bodies.push_back(body);
+
+    body.m_position = Vec3(0, -25, 0);
+    body.m_orientation = Quat(0, 0, 0, 1);
+    body.m_linearVelocity.Zero();
+    body.m_angularVelocity.Zero();
+    body.m_inverseMass = 0.0f;
+    body.m_elasticity = 0.5f;
+    body.m_friction = 0.0f;
+    body.m_shape = new ShapeBox(g_boxWall1, sizeof(g_boxWall1) / sizeof(Vec3));
+    bodies.push_back(body);
+}
+
 /*
 ========================================================================================================
 
@@ -53,7 +108,7 @@ void Scene::Initialize()
 {
     Body body;
 
-    int x = 9, y = 9;
+    int x = 1, y = 2;
 
     for (int i = 0; i < x; i++)
     {
@@ -76,6 +131,8 @@ void Scene::Initialize()
     body.m_friction = 0.0f;
     body.m_shape = new ShapeSphere(10000.0f);
     m_bodies.push_back(body);
+
+    //AddStandardSandBox(m_bodies);
 
     // TODO: Add code
 }
