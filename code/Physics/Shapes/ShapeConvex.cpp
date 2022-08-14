@@ -3,6 +3,8 @@
 //
 #include "ShapeConvex.h"
 
+#include <windows.h>
+
 /**
  * \brief 寻找在指定方向上分量长度最远的点
  * \param pts m_points数组
@@ -609,11 +611,31 @@ void BuildConvexHull(const std::vector<Vec3>& verts, std::vector<Vec3>& hullPts,
 /*
 ====================================================
 ShapeConvex::Build
+构建凸包
 ====================================================
 */
 void ShapeConvex::Build(const Vec3* pts, const int num)
 {
-    // TODO: Add code
+    m_points.clear();
+    m_points.reserve(num);
+
+    for (int i = 0; i < num; i++)
+    {
+        m_points.push_back(pts[i]);
+    }
+
+    // 通过顶点数据生成一个凸包
+    std::vector<Vec3> hull_points;
+    std::vector<tri_t> hull_tris;
+    BuildConvexHull(m_points, hull_points, hull_tris);
+    m_points = hull_points;
+
+    // 扩大Bounds
+    m_bounds.Clear();
+    m_bounds.Expand(m_points.data(), m_points.size());
+
+    m_centerOfMass = CalculateCenterOfMass(hull_points, hull_tris);
+    m_inertiaTensor = CalculateInertiaTensor(hull_points, hull_tris, m_centerOfMass);
 }
 
 /*
