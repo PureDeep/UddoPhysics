@@ -182,17 +182,293 @@ void BuildTetrahedron(const Vec3* verts, int num, std::vector<Vec3>& hull_pts, s
     hull_tris.push_back(tri);
 }
 
+/**
+ * \brief 将已经在凸包内的点从顶点数组中移除
+ * \param hull_points 凸包顶点数组
+ * \param hull_tris 凸包三角形数组
+ * \param check_pts 目标点
+ */
+void RemoveInternalPoints(const std::vector<Vec3>& hull_points, const std::vector<tri_t>& hull_tris,
+                          std::vector<Vec3>& check_pts)
+{
+    // 暴力迭代计算每个点是否在现在形成的凸包内
+    for (int i = 0; i < check_pts.size(); i++)
+    {
+        const Vec3& pt = check_pts[i];
+
+        bool is_external = false;
+
+        for (int j = 0; j < hull_tris.size(); j++)
+        {
+            const tri_t& tri = hull_tris[j];
+
+            const Vec3& a = hull_points[tri.a];
+            const Vec3& b = hull_points[tri.b];
+            const Vec3& c = hull_points[tri.c];
+
+            // 如果点在所有三角形前方（点到三角形的距离为正）则这个点还在外部
+            float dist = DistanceFromTriangle(a, b, c, pt);
+            if (dist > 0.0f)
+            {
+                is_external = true;
+                break;
+            }
+
+            // 如果点不在外部，则需要从数组中移除
+            if (!is_external)
+            {
+                check_pts.erase(check_pts.begin() + i);
+                i--;
+            }
+        }
+
+        // 移除距离凸包顶点过近的点
+        for (int i = 0; i < check_pts.size(); i++)
+        {
+            const Vec3& pt = check_pts[i];
+
+            bool is_too_close = false;
+
+            for (int j = 0; j < hull_points.size(); j++)
+            {
+                Vec3 hull_pt = hull_points[j];
+                Vec3 ray = hull_pt - pt;
+
+                if (ray.GetLengthSqr() < 0.01f * 0.01f)
+                {
+                    is_too_close = true;
+                    break;
+                }
+            }
+
+            if (is_too_close)
+            {
+                check_pts.erase(check_pts.begin() + i);
+                i--;
+            }
+        }
+    }
+}
+
+/**
+ * \brief 判断传入的边在给定的三角形中是否唯一（或者说是否可以用来构成新的三角形的一条边）
+ * \param tris 三角形数组
+ * \param facing_tris 朝向三角形的id数组
+ * \param ignore_tri 需要忽略的三角形id
+ * \param edge 边
+ * \return 是否唯一
+ */
+bool IsEdgeUnique(const std::vector<tri_t>& tris, const std::vector<int>& facing_tris, int ignore_tri,
+                  const edge_t& edge)
+{
+    for (int i = 0; i < facing_tris.size(); i++)
+    {
+        const int tri_idx = facing_tris[i];
+
+        if (ignore_tri == tri_idx)
+        {
+            continue;
+        }
+
+        const tri_t& tri = tris[tri_idx];
+
+        edge_t edges[3];
+        edges[0].a = tri.a;
+        edges[0].b = tri.b;
+
+        edges[1].a = tri.b;
+        edges[1].b = tri.c;
+
+        edges[2].a = tri.c;
+        edges[2].b = tri.a;
+
+        for (int j = 0; j < 3; j++)
+        {
+            if (edge == edges[j])
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+/**
+ * \brief 
+ * \param hull_points 
+ * \param hull_tris 
+ * \param pt 
+ */
+void AddPoint(std::vector<Vec3>& hull_points, std::vector<tri_t>& hull_tris, const Vec3& pt)
+{
+    // 首先点在外部
+
+    // 找到面朝这个点的所有三角形
+    std::vector<int> facing_tris;
+    for (int i = static_cast<int>(hull_tris.size()) - 1; i >= 0; i--)
+    {
+        const tri_t& tri = hull_tris[i];
+
+        const Vec3& a = hull_points[tri.a];
+        const Vec3& b = hull_points[tri.b];
+        const Vec3& c = hull_points[tri.c];
+
+        const float dist = DistanceFromTriangle(a, b, c, pt);
+        if (dist > 0.0f)
+        {
+            facing_tris.push_back(i);
+        }
+    }
+
+    // 找到所有唯一的边，利用这些边形成新的三角形
+    std::vector<edge_t> unique_edges;
+    for (int i = 0; i < facing_tris.size(); i++)
+    {
+        const int tri_idx = facing_tris[i];
+        const tri_t& tri = hull_tris[tri_idx];
+
+        edge_t edges[3];
+        edges[0].a = tri.a;
+        edges[0].b = tri.b;
+
+        edges[1].a = tri.b;
+        edges[1].b = tri.c;
+
+        edges[2].a = tri.c;
+        edges[2].b = tri.a;
+
+        for (int j = 0; j < 3; j++)
+        {
+            if (IsEdgeUnique(hull_tris, facing_tris, tri_idx, edges[j]))
+            {
+                unique_edges.push_back(edges[j]);
+            }
+        }
+    }
+
+    // 移除旧的facing tris
+    for (int i = 0; i < facing_tris.size(); i++)
+    {
+        hull_tris.erase(hull_tris.begin() + facing_tris[i]);
+    }
+
+    // 加入新的点
+    hull_points.push_back(pt);
+    const int new_pt_idx = static_cast<int>(hull_points.size()) - 1;
+
+    // 加入带有Unique边的新的三角形
+    for (int i = 0; i < unique_edges.size(); i++)
+    {
+        const edge_t& edge = unique_edges[i];
+
+        tri_t tri;
+        tri.a = edge.a;
+        tri.b = edge.b;
+        tri.c = new_pt_idx;
+        hull_tris.push_back(tri);
+    }
+}
+
+/**
+* \brief 删除没有被任何三角形引用的点
+ * \param hull_points 凸包顶点数组
+ * \param hull_tris 凸包三角形数组
+ */
+void RemoveUnreferencedVerts(std::vector<Vec3>& hull_points, std::vector<tri_t>& hull_tris)
+{
+    // 对每个点进行循环，然后检查它是否被任何的三角形引用，如果没有，删除它
+    for (int i = 0; i < hull_points.size(); i++)
+    {
+        bool is_used = false;
+
+        for (int j = 0; j < hull_tris.size(); j++)
+        {
+            const tri_t& tri = hull_tris[j];
+
+            if (tri.a == i || tri.b == i || tri.c == i)
+            {
+                is_used = true;
+                break;
+            }
+        }
+
+        if (is_used)
+        {
+            continue;
+        }
+
+        // 因为删除一个点之后，所有比它大的点id都要减1
+        for (int j = 0; j < hull_tris.size(); j ++)
+        {
+            tri_t& tri = hull_tris[j];
+            if (tri.a > i)
+            {
+                tri.a --;
+            }
+            if (tri.b > i)
+            {
+                tri.b --;
+            }
+            if (tri.c > i)
+            {
+                tri.c --;
+            }
+        }
+
+        hull_points.erase(hull_points.begin() + i);
+        i--;
+    }
+}
+
+/**
+ * \brief 扩大凸包
+ * \param hull_points 
+ * \param hull_tris 
+ * \param verts 
+ */
+void ExpandConvexHull(std::vector<Vec3>& hull_points, std::vector<tri_t>& hull_tris, const std::vector<Vec3>& verts)
+{
+    std::vector<Vec3> external_verts = verts;
+    // 移除已经在凸包内部的顶点
+    RemoveInternalPoints(hull_points, hull_tris, external_verts);
+
+    while (external_verts.size() > 0)
+    {
+        int pt_idx = FindPointFurthestInDir(external_verts.data(), static_cast<int>(external_verts.size()),
+                                            external_verts[0]);
+
+        Vec3 pt = external_verts[pt_idx];
+
+        // 移除元素
+        external_verts.erase(external_verts.begin() + pt_idx);
+
+        AddPoint(hull_points, hull_tris, pt);
+
+        RemoveInternalPoints(hull_points, hull_tris, external_verts);
+    }
+
+    RemoveUnreferencedVerts(hull_points, hull_tris);
+}
+
 /*
 ========================================================================================================
 
-ShapeConvex
+ShapeConvex::BuildConvexHull
 
 ========================================================================================================
 */
 
 void BuildConvexHull(const std::vector<Vec3>& verts, std::vector<Vec3>& hullPts, std::vector<tri_t>& hullTris)
 {
-    // TODO: Add code
+    if (verts.size() < 4)
+    {
+        return;
+    }
+
+    BuildTetrahedron(verts.data(), static_cast<int>(verts.size()), hullPts, hullTris);
+
+    ExpandConvexHull(hullPts, hullTris, verts);
 }
 
 /*
