@@ -313,6 +313,49 @@ void TestSignedVolumeProjection()
     );
 }
 
+struct point_t
+{
+    Vec3 xyz; // 在Minkowski Sum中的点
+    Vec3 pt_a; // BodyA上的点
+    Vec3 pt_b; // BodyB上的点
+
+    point_t() : xyz(Vec3(0.0f)), pt_a(Vec3(0.0f)), pt_b(Vec3(0.0f))
+    {
+    }
+
+    const point_t& operator =(const point_t& rhs)
+    {
+        xyz = rhs.xyz;
+        pt_a = rhs.pt_a;
+        pt_b = rhs.pt_b;
+        return *this;
+    }
+
+    bool operator ==(const point_t& rhs)
+    {
+        if (xyz == rhs.xyz && pt_a == rhs.pt_a && pt_b == rhs.pt_b)
+        {
+            return true;
+        }
+        return false;
+    }
+};
+
+point_t Support(Body* body_a, Body* body_b, Vec3 dir, const float bias)
+{
+    point_t point;
+
+    // dir方向上最远的点
+    point.pt_a = body_a->m_shape->Support(dir, body_a->m_position, body_a->m_orientation, bias);
+    dir = dir * -1.0f;
+    // 反方向上最远的点
+    point.pt_b = body_b->m_shape->Support(dir, body_b->m_position, body_b->m_orientation, bias);
+    // Minkowski Sum中dir方向上最远的点
+    point.xyz = point.pt_a - point.pt_b;
+
+    return point;
+}
+
 /*
 ================================
 GJK_DoesIntersect
