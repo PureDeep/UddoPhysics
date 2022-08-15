@@ -222,6 +222,97 @@ Vec4 SignedVolume3D(const Vec3& s1, const Vec3& s2, const Vec3& s3, const Vec3& 
     return lambdas;
 }
 
+/**
+ * \brief 测试：将一个点投影到单纯形，并返回其中心坐标
+ */
+void TestSignedVolumeProjection()
+{
+    const Vec3 orgPts[4] = {
+        Vec3(0, 0, 0),
+        Vec3(1, 0, 0),
+        Vec3(0, 1, 0),
+        Vec3(0, 0, 1),
+    };
+    Vec3 pts[4];
+    Vec4 lambdas;
+    Vec3 v;
+
+    for (int i = 0; i < 4; i++)
+    {
+        pts[i] = orgPts[i] + Vec3(1, 1, 1);
+    }
+    lambdas = SignedVolume3D(pts[0], pts[1], pts[2], pts[3]);
+    v.Zero();
+    for (int i = 0; i < 4; i++)
+    {
+        v += pts[i] * lambdas[i];
+    }
+    printf("lambdas: %.3f %.3f %.3f %.3f        v: %.3f %.3f %.3f\n",
+           lambdas.x, lambdas.y, lambdas.z, lambdas.w,
+           v.x, v.y, v.z
+    );
+
+    for (int i = 0; i < 4; i++)
+    {
+        pts[i] = orgPts[i] + Vec3(-1, -1, -1) * 0.25f;
+    }
+    lambdas = SignedVolume3D(pts[0], pts[1], pts[2], pts[3]);
+    v.Zero();
+    for (int i = 0; i < 4; i++)
+    {
+        v += pts[i] * lambdas[i];
+    }
+    printf("lambdas: %.3f %.3f %.3f %.3f        v: %.3f %.3f %.3f\n",
+           lambdas.x, lambdas.y, lambdas.z, lambdas.w,
+           v.x, v.y, v.z
+    );
+
+    for (int i = 0; i < 4; i++)
+    {
+        pts[i] = orgPts[i] + Vec3(-1, -1, -1);
+    }
+    lambdas = SignedVolume3D(pts[0], pts[1], pts[2], pts[3]);
+    v.Zero();
+    for (int i = 0; i < 4; i++)
+    {
+        v += pts[i] * lambdas[i];
+    }
+    printf("lambdas: %.3f %.3f %.3f %.3f        v: %.3f %.3f %.3f\n",
+           lambdas.x, lambdas.y, lambdas.z, lambdas.w,
+           v.x, v.y, v.z
+    );
+
+    for (int i = 0; i < 4; i++)
+    {
+        pts[i] = orgPts[i] + Vec3(1, 1, -0.5f);
+    }
+    lambdas = SignedVolume3D(pts[0], pts[1], pts[2], pts[3]);
+    v.Zero();
+    for (int i = 0; i < 4; i++)
+    {
+        v += pts[i] * lambdas[i];
+    }
+    printf("lambdas: %.3f %.3f %.3f %.3f        v: %.3f %.3f %.3f\n",
+           lambdas.x, lambdas.y, lambdas.z, lambdas.w,
+           v.x, v.y, v.z
+    );
+
+    pts[0] = Vec3(51.1996613f, 26.1989613f, 1.91339576f);
+    pts[1] = Vec3(-51.0567360f, -26.0565681f, -0.436143428f);
+    pts[2] = Vec3(50.8978920f, -24.1035538f, -1.04042661f);
+    pts[3] = Vec3(-49.1021080f, 25.8964462f, -1.04042661f);
+    lambdas = SignedVolume3D(pts[0], pts[1], pts[2], pts[3]);
+    v.Zero();
+    for (int i = 0; i < 4; i++)
+    {
+        v += pts[i] * lambdas[i];
+    }
+    printf("lambdas: %.3f %.3f %.3f %.3f        v: %.3f %.3f %.3f\n",
+           lambdas.x, lambdas.y, lambdas.z, lambdas.w,
+           v.x, v.y, v.z
+    );
+}
+
 /*
 ================================
 GJK_DoesIntersect
