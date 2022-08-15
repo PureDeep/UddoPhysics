@@ -451,6 +451,8 @@ inline Mat4 Mat4::Inverse() const
     return inv;
 }
 
+// 余子式
+// 在线性代数中，矩阵a的余子式是某个更小的方阵的行列式，通过移除a的一个或多个行或列而从a上切下来。
 inline Mat3 Mat4::Minor(const int i, const int j) const
 {
     Mat3 minor;
@@ -480,10 +482,12 @@ inline Mat3 Mat4::Minor(const int i, const int j) const
     return minor;
 }
 
+// 代数余子式Cij
+// 余子式对于计算方阵的行列式和逆矩阵都很有用。
 inline float Mat4::Cofactor(const int i, const int j) const
 {
     const Mat3 minor = Minor(i, j);
-    const float C = static_cast<float>(pow(-1, i + 1 + j + 1)) * minor.Determinant();
+    const auto C = static_cast<float>(pow(-1, i + 1 + j + 1)) * minor.Determinant();
     return C;
 }
 
