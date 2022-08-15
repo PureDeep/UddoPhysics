@@ -645,11 +645,26 @@ ShapeConvex::Support
 */
 Vec3 ShapeConvex::Support(const Vec3& dir, const Vec3& pos, const Quat& orient, const float bias) const
 {
-    Vec3 supportPt;
+    // 先找出在dir方向上最远的点
+    Vec3 max_pt = orient.RotatePoint(m_points[0]) + pos; // 先求m_points[0]在世界坐标中的位置（因为shape都是在本地坐标下定义的）
+    float max_dist = dir.Dot(max_pt); // m_points[0]在dir方向上的投影长度
+    for (int i = 1; i < m_points.size(); i++)
+    {
+        const Vec3 pt = orient.RotatePoint(m_points[i]) + pos;
+        const float dist = dir.Dot(pt);
 
-    // TODO: Add code
+        if (dist > max_dist)
+        {
+            max_dist = dist;
+            max_pt = pt;
+        }
+    }
 
-    return supportPt;
+    Vec3 norm = dir;
+    norm.Normalize();
+    norm *= bias;
+
+    return max_pt + norm;
 }
 
 /*
