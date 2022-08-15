@@ -85,6 +85,13 @@ void BuildPairs(std::vector<collisionPair_t>& collision_pairs, const psuedoBody_
     }
 }
 
+/**
+ * \brief 正交分离轴算法
+ * \param bodies 包体
+ * \param num 顶点数量
+ * \param final_pairs 
+ * \param dt_sec 时间间隔
+ */
 void SweepAndPrune1D(const Body* bodies, int num, std::vector<collisionPair_t>& final_pairs, float dt_sec)
 {
     auto sorted_bodies = static_cast<psuedoBody_t*>(alloca(sizeof(psuedoBody_t) * num * 2));
