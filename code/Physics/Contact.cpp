@@ -74,8 +74,8 @@ void ResolveContact(contact_t& contact)
     const Vec3 impulse_friction = vel_tang * reduced_mass * friction;
 
     // 施加摩擦力产生的冲量
-    body_a->ApplyImpulse(pt_a, impulse_friction * -1.0f);
-    body_b->ApplyImpulse(pt_b, impulse_friction * 1.0f);
+    // body_a->ApplyImpulse(pt_a, impulse_friction * -1.0f);
+    // body_b->ApplyImpulse(pt_b, impulse_friction * 1.0f);
 
     // Distance project . 阻止相撞的两个物体相互穿透
     if (contact.timeOfImpact == 0.0f)
