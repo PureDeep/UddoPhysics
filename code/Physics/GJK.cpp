@@ -3,6 +3,8 @@
 //
 #include "GJK.h"
 
+#include <windows.h>
+
 /**
  * \brief 找到哪个轴对齐的平面能使单纯形（1D单纯形指线段）的投影面积或长度最大化
  * \param a 线段端点a
@@ -354,6 +356,153 @@ point_t Support(Body* body_a, Body* body_b, Vec3 dir, const float bias)
     point.xyz = point.pt_a - point.pt_b;
 
     return point;
+}
+
+/**
+ * \brief 将原点投影到单纯形上以获得新的搜索方向，并检查原点是否在单纯形内
+ * \param pts 
+ * \param num 
+ * \param new_dir 
+ * \param lambdas_out 
+ * \return 
+ */
+bool SimplexSignedVolumes(point_t* pts, const int num, Vec3& new_dir, Vec4& lambdas_out)
+{
+    const float epsilon_f = 0.0001f * 0.0001f;
+
+    lambdas_out.Zero();
+
+    bool does_intersect = false;
+
+    switch (num)
+    {
+    default:
+    case 2:
+        {
+            Vec2 lambdas = SignedVolume1D(pts[0].xyz, pts[1].xyz);
+            Vec3 v(0.0f);
+            for (int i = 0; i < 2; i++)
+            {
+                v += pts[i].xyz * lambdas[i];
+            }
+
+            new_dir = v * -1.0f;
+            does_intersect = (v.GetLengthSqr() < epsilon_f);
+            lambdas_out[0] = lambdas[0];
+            lambdas_out[1] = lambdas[1];
+        }
+        break;
+    case 3:
+        {
+            Vec3 lambdas = SignedVolume2D(pts[0].xyz, pts[1].xyz, pts[2].xyz);
+            Vec3 v(0.0f);
+            for (int i = 0; i < 3; i++)
+            {
+                v += pts[i].xyz * lambdas[i];
+            }
+
+            new_dir = v * -1.0f;
+            does_intersect = (v.GetLengthSqr() < epsilon_f);
+            lambdas_out[0] = lambdas[0];
+            lambdas_out[1] = lambdas[1];
+            lambdas_out[2] = lambdas[2];
+        }
+        break;
+    case 4:
+        {
+            Vec4 lambdas = SignedVolume3D(pts[0].xyz, pts[1].xyz, pts[2].xyz, pts[3].xyz);
+            Vec3 v(0.0f);
+            for (int i = 0; i < 4; i++)
+            {
+                v += pts[i].xyz * lambdas[i];
+            }
+
+            new_dir = v * -1.0f;
+            does_intersect = (v.GetLengthSqr() < epsilon_f);
+            lambdas_out[0] = lambdas[0];
+            lambdas_out[1] = lambdas[1];
+            lambdas_out[2] = lambdas[2];
+            lambdas_out[3] = lambdas[3];
+        }
+        break;
+    }
+
+    return does_intersect;
+}
+
+/**
+ * \brief 检查点是否已经在单纯形内部
+ * \param simplex_points 
+ * \param new_pt 
+ * \return 
+ */
+bool HasPoint(const point_t simplex_points[4], const point_t& new_pt)
+{
+    const float precision = 1e-6f;
+
+    for (int i = 0; i < 4; i++)
+    {
+        Vec3 delta = simplex_points[i].xyz - new_pt.xyz;
+        if (delta.GetLengthSqr() < precision * precision)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * \brief 将有效的支持点排序到数组
+ * \param simplex_points 
+ * \param lambdas 
+ */
+void SortValids(point_t simplex_points[4], Vec4& lambdas)
+{
+    bool valids[4];
+    for (int i = 0; i < 4; i++)
+    {
+        valids[i] = true;
+        if (lambdas[i] == 0.0f)
+        {
+            valids[i] = false;
+        }
+    }
+
+    Vec4 valid_lambdas(0.0f);
+    int valid_count = 0;
+    point_t valid_pts[4];
+    memset(valid_pts, 0, sizeof(point_t) * 4);
+    for (int i = 0; i < 4; i++)
+    {
+        if (valids[i])
+        {
+            valid_pts[valid_count] = simplex_points[i];
+            valid_lambdas[valid_count] = lambdas[i];
+            valid_count++;
+        }
+    }
+
+    // 将有效的支持点再拷贝回simplex_points
+    for (int i = 0; i < 4; i++)
+    {
+        simplex_points[i] = valid_pts[i];
+        lambdas[i] = valid_lambdas[i];
+    }
+}
+
+static int NumValids(const Vec4& lambdas)
+{
+    int num = 0;
+
+    for (int i = 0; i < 4; i++)
+    {
+        if (lambdas[i] != 0.0f)
+        {
+            num++;
+        }
+    }
+
+    return num;
 }
 
 /*
