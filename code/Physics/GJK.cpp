@@ -572,6 +572,172 @@ bool GJK_DoesIntersect(const Body* bodyA, const Body* bodyB)
     return does_contain_origin;
 }
 
+Vec3 BarycentricCoordinates(Vec3 s1, Vec3 s2, Vec3 s3, const Vec3& pt)
+{
+    s1 = s1 - pt;
+    s2 = s2 - pt;
+    s3 = s3 - pt;
+
+    Vec3 normal = (s2 - s1).Cross(s3 - s1);
+    Vec3 p0 = normal * s1.Dot(normal) / normal.GetLengthSqr();
+
+    //
+    int idx = 0;
+    float area_max = 0;
+    for (int i = 0; i < 3; i++)
+    {
+        int j = (i + 1) % 3;
+        int k = (i + 2) % 3;
+
+        auto a = Vec2(s1[j], s1[k]);
+        auto b = Vec2(s2[j], s2[k]);
+        auto c = Vec2(s3[j], s3[k]);
+
+        Vec2 ab = b - a;
+        Vec2 ac = c - a;
+
+        float area = ab.x * ac.y - ab.y * ac.x;
+        if (area * area > area_max * area_max)
+        {
+            idx = i;
+            area_max = area;
+        }
+    }
+
+    // 投影到合适的轴
+    int x = (idx + 1) % 3;
+    int y = (idx + 2) % 3;
+    Vec2 s[3]; // 三个顶点在某个面上的坐标
+    s[0] = Vec2(s1[x], s1[y]);
+    s[1] = Vec2(s2[x], s2[y]);
+    s[2] = Vec2(s3[x], s3[y]);
+
+    auto p = Vec2(p0[x], p0[y]);
+
+    Vec3 areas;
+    for (int i = 0; i < 3; i++)
+    {
+        int j = (i + 1) % 3;
+        int k = (i + 2) % 3;
+
+        Vec2 a = p;
+        Vec2 b = s[j];
+        Vec2 c = s[k];
+        Vec2 ab = b - a;
+        Vec2 ac = c - a;
+
+        areas[i] = ab.x * ac.y - ab.y * ac.x;
+    }
+
+    Vec3 lambdas = areas / area_max;
+    if (!lambdas.IsValid())
+    {
+        lambdas = Vec3(1, 0, 0);
+    }
+
+    return lambdas;
+}
+
+/**
+ * \brief 求三角形法线向量
+ * \param tri 三角形tri
+ * \param points 顶点数组
+ * \return 三角形法线向量
+ */
+Vec3 NormalDirection(const tri_t& tri, const std::vector<point_t>& points)
+{
+    const Vec3& a = points[tri.a].xyz;
+    const Vec3& b = points[tri.b].xyz;
+    const Vec3& c = points[tri.c].xyz;
+
+    Vec3 ab = b - a;
+    Vec3 ac = c - a;
+    Vec3 normal = ab.Cross(ac);
+    normal.Normalize();
+    return normal;
+}
+
+/**
+ * \brief 求点到三角形的带符号距离
+ * \param tri 三角形顶点数据
+ * \param pt 指定点
+ * \param points 顶点数组
+ * \return 指定点到三角形所在面的距离
+ */
+float SignedDistanceToTriangle(const tri_t& tri, const Vec3& pt, const std::vector<point_t>& points)
+{
+    const Vec3 normal = NormalDirection(tri, points);
+    const Vec3& a = points[tri.a].xyz;
+    const Vec3 a_to_pt = pt - a;
+    const float dist = normal.Dot(a_to_pt);
+    return dist;
+}
+
+/**
+ * \brief 找到距离原点最近的三角形
+ * \param triangles 三角形数组
+ * \param points 顶点数组
+ * \return 距离原点最近的三角形的索引
+ */
+int ClosestTriangle(const std::vector<tri_t>& triangles, const std::vector<point_t>& points)
+{
+    float min_dist_sqr = 1e10;
+
+    int idx = -1;
+
+    for (int i = 0; i < triangles.size(); i++)
+    {
+        const tri_t& tri = triangles[i];
+
+        float dist = SignedDistanceToTriangle(tri, Vec3(0.0f), points);
+        float dist_sqr = dist * dist;
+        if (dist_sqr < min_dist_sqr * min_dist_sqr)
+        {
+            idx = i;
+            min_dist_sqr = dist_sqr;
+        }
+    }
+
+    return idx;
+}
+
+/**
+ * \brief 检查指定点是否在Minkowisk差中
+ * \param pt 指定点
+ * \param triangles 三角形数组
+ * \param points 顶点数组
+ * \return 点是否在Minkowisk差中
+ */
+bool HasPoint(const Vec3& pt, const std::vector<tri_t>& triangles, const std::vector<point_t>& points)
+{
+    float epsilon = 0.0001f * 0.0001f;
+    Vec3 delta;
+
+    for (int i = 0; i < triangles.size(); i++)
+    {
+        const tri_t& tri = triangles[i];
+
+        delta = pt - points[tri.a].xyz;
+        if (delta.GetLengthSqr() < epsilon)
+        {
+            return true;
+        }
+
+        delta = pt - points[tri.b].xyz;
+        if (delta.GetLengthSqr() < epsilon)
+        {
+            return true;
+        }
+
+        delta = pt - points[tri.c].xyz;
+        if (delta.GetLengthSqr() < epsilon)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 /*
 ================================
 GJK_ClosestPoints
