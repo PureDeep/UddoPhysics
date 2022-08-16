@@ -108,7 +108,7 @@ void Scene::Initialize()
 {
     Body body;
 
-    int x = 1, y = 2;
+    int x = 5, y = 5;
 
     for (int i = 0; i < x; i++)
     {
@@ -233,4 +233,18 @@ void Scene::Update(const float dt_sec)
             m_bodies[i].Update(time_remaining);
         }
     }
+}
+
+void Scene::AddShapeSphere()
+{
+    Body body;
+
+    body.m_position = Vec3(0, 0, 15);
+    body.m_orientation = Quat(0, 0, 0, 1);
+    body.m_inverseMass = 1.0f;
+    body.m_elasticity = 0.5f;
+    body.m_friction = 0.5f;
+    body.m_shape = new ShapeSphere(1.0f);
+
+    m_bodies.push_back(body);
 }

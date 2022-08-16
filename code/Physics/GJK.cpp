@@ -738,6 +738,246 @@ bool HasPoint(const Vec3& pt, const std::vector<tri_t>& triangles, const std::ve
     return false;
 }
 
+/**
+ * \brief 移除所有面向该点的三角形
+ * \param pt 给定点
+ * \param triangles 三角形数组
+ * \param points 顶点数组
+ * \return 被移除的三角形的数量
+ */
+int RemoveTrianglesFacingPoint(const Vec3& pt, std::vector<tri_t>& triangles, const std::vector<point_t>& points)
+{
+    int num_removed = 0;
+    for (int i = 0; i < triangles.size(); i++)
+    {
+        const tri_t& tri = triangles[i];
+
+        float dist = SignedDistanceToTriangle(tri, pt, points);
+        if (dist > 0.0f)
+        {
+            // dist > 0 表示三角形面向该点，则删除该三角形
+            triangles.erase(triangles.begin() + i);
+            i--;
+            num_removed ++;
+        }
+    }
+
+    return num_removed;
+}
+
+/**
+ * \brief 找到悬空的边
+ * \param dangling_edges 存放找到的悬空的边的数组
+ * \param triangles 三角形数组
+ */
+void FindDanglingEdges(std::vector<edge_t>& dangling_edges, const std::vector<tri_t>& triangles)
+{
+    dangling_edges.clear();
+
+    for (int i = 0; i < triangles.size(); i++)
+    {
+        const tri_t& tri = triangles[i];
+
+        edge_t edges[3];
+        edges[0].a = tri.a;
+        edges[0].b = tri.b;
+
+        edges[1].a = tri.b;
+        edges[1].b = tri.c;
+
+        edges[2].a = tri.c;
+        edges[2].b = tri.a;
+
+        // counts中存储每条边与其他三角形公用的次数
+        int counts[3];
+        counts[0] = 0;
+        counts[1] = 0;
+        counts[2] = 0;
+
+        for (int j = 0; j < triangles.size(); j++)
+        {
+            if (j == i)
+            {
+                continue;
+            }
+
+            const tri_t& tri2 = triangles[j];
+
+            edge_t edges2[3];
+            edges2[0].a = tri2.a;
+            edges2[0].b = tri2.b;
+
+            edges2[1].a = tri2.b;
+            edges2[1].b = tri2.c;
+
+            edges2[2].a = tri2.c;
+            edges2[2].b = tri2.a;
+
+            // 判断三角形1和三角形2的三条边是否有相同的
+            for (int k = 0; k < 3; k++)
+            {
+                if (edges[k] == edges2[0])
+                {
+                    counts[k]++;
+                }
+                if (edges[k] == edges2[1])
+                {
+                    counts[k]++;
+                }
+                if (edges[k] == edges2[2])
+                {
+                    counts[k]++;
+                }
+            }
+        }
+
+        // 如果一条边与其他三角形公用次数为0，则这条边悬空
+        for (int k = 0; k < 3; k++)
+        {
+            if (0 == counts[k])
+            {
+                dangling_edges.push_back(edges[k]);
+            }
+        }
+    }
+}
+
+/**
+ * \brief 
+ * \param body_a 
+ * \param body_b 
+ * \param bias 
+ * \param simplex_points 
+ * \param pt_on_a 
+ * \param pt_on_b 
+ * \return 
+ */
+float EPA_Expand(const Body* body_a, const Body* body_b, const float bias, const point_t simplex_points[4], Vec3& pt_on_a,
+                 Vec3& pt_on_b)
+{
+    std::vector<point_t> points;
+    std::vector<tri_t> triangles;
+    std::vector<edge_t> danglingEdges;
+
+    Vec3 center(0.0f);
+    for (int i = 0; i < 4; i++)
+    {
+        points.push_back(simplex_points[i]);
+        center += simplex_points[i].xyz;
+    }
+    center *= 0.25f;
+
+    // Build the triangles
+    for (int i = 0; i < 4; i++)
+    {
+        int j = (i + 1) % 4;
+        int k = (i + 2) % 4;
+        tri_t tri;
+        tri.a = i;
+        tri.b = j;
+        tri.c = k;
+
+        int unusedPt = (i + 3) % 4;
+        float dist = SignedDistanceToTriangle(tri, points[unusedPt].xyz, points);
+
+        // The unused point is always on the negative/inside of the triangle.. make sure the normal points away
+        if (dist > 0.0f)
+        {
+            std::swap(tri.a, tri.b);
+        }
+
+        triangles.push_back(tri);
+    }
+
+    //
+    //	Expand the simplex to find the closest face of the CSO to the origin
+    //
+    while (true)
+    {
+        const int idx = ClosestTriangle(triangles, points);
+        Vec3 normal = NormalDirection(triangles[idx], points);
+
+        const point_t newPt = Support(body_a, body_b, normal, bias);
+
+        // if w already exists, then just stop
+        // because it means we can't expand any further
+        if (HasPoint(newPt.xyz, triangles, points))
+        {
+            break;
+        }
+
+        float dist = SignedDistanceToTriangle(triangles[idx], newPt.xyz, points);
+        if (dist <= 0.0f)
+        {
+            break; // can't expand
+        }
+
+        const int newIdx = static_cast<int>(points.size());
+        points.push_back(newPt);
+
+        // Remove Triangles that face this point
+        int numRemoved = RemoveTrianglesFacingPoint(newPt.xyz, triangles, points);
+        if (0 == numRemoved)
+        {
+            break;
+        }
+
+        // Find Dangling Edges
+        danglingEdges.clear();
+        FindDanglingEdges(danglingEdges, triangles);
+        if (0 == danglingEdges.size())
+        {
+            break;
+        }
+
+        // In theory the edges should be a proper CCW order
+        // So we only need to add the new point as 'a' in order
+        // to create new triangles that face away from origin
+        for (int i = 0; i < danglingEdges.size(); i++)
+        {
+            const edge_t& edge = danglingEdges[i];
+
+            tri_t triangle;
+            triangle.a = newIdx;
+            triangle.b = edge.b;
+            triangle.c = edge.a;
+
+            // Make sure it's oriented properly
+            float dist = SignedDistanceToTriangle(triangle, center, points);
+            if (dist > 0.0f)
+            {
+                std::swap(triangle.b, triangle.c);
+            }
+
+            triangles.push_back(triangle);
+        }
+    }
+
+    // Get the projection of the origin on the closest triangle
+    const int idx = ClosestTriangle(triangles, points);
+    const tri_t& tri = triangles[idx];
+    Vec3 ptA_w = points[tri.a].xyz;
+    Vec3 ptB_w = points[tri.b].xyz;
+    Vec3 ptC_w = points[tri.c].xyz;
+    Vec3 lambdas = BarycentricCoordinates(ptA_w, ptB_w, ptC_w, Vec3(0.0f));
+
+    // Get the point on shape A
+    Vec3 ptA_a = points[tri.a].pt_a;
+    Vec3 ptB_a = points[tri.b].pt_a;
+    Vec3 ptC_a = points[tri.c].pt_a;
+    pt_on_a = ptA_a * lambdas[0] + ptB_a * lambdas[1] + ptC_a * lambdas[2];
+
+    // Get the point on shape B
+    Vec3 ptA_b = points[tri.a].pt_b;
+    Vec3 ptB_b = points[tri.b].pt_b;
+    Vec3 ptC_b = points[tri.c].pt_b;
+    pt_on_b = ptA_b * lambdas[0] + ptB_b * lambdas[1] + ptC_b * lambdas[2];
+
+    // Return the penetration distance
+    Vec3 delta = pt_on_b - pt_on_a;
+    return delta.GetMagnitude();
+}
+
 /*
 ================================
 GJK_ClosestPoints

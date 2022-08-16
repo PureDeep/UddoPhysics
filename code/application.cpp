@@ -476,6 +476,11 @@ Application::Keyboard
 */
 void Application::Keyboard(int key, int scancode, int action, int modifiers)
 {
+    // 按F键生成新的球体
+    if (GLFW_KEY_F == key && GLFW_RELEASE == action)
+    {
+        //m_scene->AddShapeSphere();
+    }
     // 按R键重置场景
     if (GLFW_KEY_R == key && GLFW_RELEASE == action)
     {

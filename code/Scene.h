@@ -24,6 +24,8 @@ public:
     void Initialize();
     void Update(float dt_sec);
 
+    void AddShapeSphere();
+
     std::vector<Body> m_bodies;
     std::vector<Constraint*> m_constraints;
     ManifoldCollector m_manifolds;
