@@ -343,7 +343,7 @@ struct point_t
     }
 };
 
-point_t Support(Body* body_a, Body* body_b, Vec3 dir, const float bias)
+point_t Support(const Body* body_a, const Body* body_b, Vec3 dir, const float bias)
 {
     point_t point;
 
@@ -364,7 +364,7 @@ point_t Support(Body* body_a, Body* body_b, Vec3 dir, const float bias)
  * \param num 
  * \param new_dir 
  * \param lambdas_out 
- * \return 
+ * \return 点是否在单纯形内
  */
 bool SimplexSignedVolumes(point_t* pts, const int num, Vec3& new_dir, Vec4& lambdas_out)
 {
@@ -512,9 +512,64 @@ GJK_DoesIntersect
 */
 bool GJK_DoesIntersect(const Body* bodyA, const Body* bodyB)
 {
-    // TODO: Add code
+    const Vec3 origin(0.0f);
 
-    return false;
+    int num_pts = 1;
+    point_t simplex_points[4];
+    // 随机找一个support点
+    simplex_points[0] = Support(bodyA, bodyB, Vec3(1, 1, 1), 0.0f);
+
+    float closest_dist = 1e10f;
+    bool does_contain_origin = false;
+    // 选择一个新的搜索方向
+    Vec3 new_dir = simplex_points[0].xyz * -1.0f;
+
+    do
+    {
+        // 获得反向的新support点
+        point_t new_pt = Support(bodyA, bodyB, new_dir, 0.0f);
+
+        // 如果新点与原来的点一样，则不能再扩张了，中断寻找（如果已经有此support点了，则返回false）
+        if (HasPoint(simplex_points, new_pt))
+        {
+            break;
+        }
+
+        simplex_points[num_pts] = new_pt;
+        num_pts++;
+
+        // 如果这个点和原点在同一边，则没有发生碰撞
+        float dot_dot = new_dir.Dot(new_pt.xyz - origin);
+        if (dot_dot < 0.0f)
+        {
+            break;
+        }
+
+        // 检查原点是否在单纯形内，如果是，返回true，说明发生了碰撞
+        Vec4 lambdas;
+        does_contain_origin = SimplexSignedVolumes(simplex_points, num_pts, new_dir, lambdas);
+        if (does_contain_origin)
+        {
+            break;
+        }
+
+        // 检查原点在单纯形上的投影是否比之前的投影更近，如果不靠近原点，则不相交，返回false
+        float dist = new_dir.GetLengthSqr();
+        if (dist >= closest_dist)
+        {
+            break;
+        }
+        closest_dist = dist;
+
+        //从单纯形上移除任何不支持原点投影到单纯形上的点
+        SortValids(simplex_points, lambdas);
+        // 如果有四个单纯形点，则有一个交点
+        num_pts = NumValids(lambdas);
+        does_contain_origin = (num_pts == 4);
+    }
+    while (!does_contain_origin);
+
+    return does_contain_origin;
 }
 
 /*
