@@ -190,3 +190,24 @@ bool SphereSphereDynamic(const ShapeSphere* shape_a, const ShapeSphere* shape_b,
     pt_b = new_pos_b - ab * shape_b->m_radius;
     return true;
 }
+
+bool SphereSphereStatic(const ShapeSphere* shape_a, const ShapeSphere* shape_b, const Vec3& pos_a,
+                        const Vec3& pos_b, Vec3& pt_a, Vec3& pt_b)
+{
+    const Vec3 ab = pos_b - pos_a;
+    Vec3 norm = ab;
+    norm.Normalize();
+
+    pt_a = pos_a + norm * shape_a->m_radius;
+    pt_b = pos_b - norm * shape_b->m_radius;
+
+    const float radius_ab = shape_a->m_radius + shape_b->m_radius;
+    const float length_sqr = ab.GetLengthSqr();
+
+    if (length_sqr <= radius_ab * radius_ab)
+    {
+        return true;
+    }
+
+    return false;
+}

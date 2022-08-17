@@ -13,3 +13,6 @@ bool RaySphere(const Vec3& ray_start, const Vec3& ray_dir, const Vec3& sphere_ce
 
 bool SphereSphereDynamic(const ShapeSphere* shape_a, const ShapeSphere* shape_b, const Vec3& pos_a, const Vec3& pos_b,
                          const Vec3& vel_a, const Vec3& vel_b, float dt, Vec3& pt_a, Vec3& pt_b, float& toi);
+
+bool SphereSphereStatic(const ShapeSphere* shape_a, const ShapeSphere* shape_b, const Vec3& pos_a, const Vec3& pos_b,
+                        Vec3& pt_a, Vec3& pt_b);
