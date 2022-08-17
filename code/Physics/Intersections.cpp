@@ -13,6 +13,70 @@ bool Intersect(Body* bodyA, Body* bodyB, contact_t& contact)
 {
     contact.bodyA = bodyA;
     contact.bodyB = bodyB;
+    contact.timeOfImpact = 0.0f;
+
+    // 如果是两个球
+    if (bodyA->m_shape->GetType() == Shape::SHAPE_SPHERE && bodyB->m_shape->GetType() == Shape::SHAPE_SPHERE)
+    {
+        const ShapeSphere* sphere_a = dynamic_cast<ShapeSphere*>(bodyA->m_shape);
+        const ShapeSphere* sphere_b = dynamic_cast<ShapeSphere*>(bodyB->m_shape);
+
+        Vec3 pos_a = bodyA->m_position;
+        Vec3 pos_b = bodyB->m_position;
+
+        if (SphereSphereStatic(sphere_a, sphere_b, pos_a, pos_b, contact.ptOnA_WorldSpace, contact.ptOnB_WorldSpace))
+        {
+            contact.normal = pos_a - pos_b;
+            contact.normal.Normalize();
+
+            contact.ptOnA_LocalSpace = bodyA->WorldSpaceToBodySpace(contact.ptOnA_WorldSpace);
+            contact.ptOnB_LocalSpace = bodyB->WorldSpaceToBodySpace(contact.ptOnB_WorldSpace);
+
+            const Vec3 ab = pos_a - pos_b;
+            const float separation_distance = ab.GetMagnitude() - (sphere_a->m_radius + sphere_b->m_radius);
+            contact.separationDistance = separation_distance;
+            return true;
+        }
+        Vec3 pt_on_a;
+        Vec3 pt_on_b;
+        const float bias = 0.001f;
+
+        if (GJK_DoesIntersect(bodyA, bodyB, bias, pt_on_a, pt_on_b))
+        {
+            Vec3 normal = pt_on_b - pt_on_b;
+            normal.Normalize();
+
+            pt_on_a -= normal * bias;
+            pt_on_b += normal * bias;
+
+            contact.normal = normal;
+
+            contact.ptOnA_WorldSpace = pt_on_a;
+            contact.ptOnB_WorldSpace = pt_on_b;
+
+            contact.ptOnA_LocalSpace = bodyA->WorldSpaceToBodySpace(contact.ptOnA_WorldSpace);
+            contact.ptOnB_LocalSpace = bodyB->WorldSpaceToBodySpace(contact.ptOnB_WorldSpace);
+
+            Vec3 ab = bodyB->m_position - bodyA->m_position;
+            float separation_distance = (pt_on_a - pt_on_b).GetMagnitude();
+            contact.separationDistance = -separation_distance;
+            return true;
+        }
+
+        // 未发生接触的情况
+        GJK_ClosestPoints(bodyA, bodyB, pt_on_a, pt_on_b);
+        contact.ptOnA_WorldSpace = pt_on_a;
+        contact.ptOnB_WorldSpace = pt_on_b;
+
+        contact.ptOnA_LocalSpace = bodyA->WorldSpaceToBodySpace(contact.ptOnA_WorldSpace);
+        contact.ptOnB_LocalSpace = bodyB->WorldSpaceToBodySpace(contact.ptOnB_WorldSpace);
+
+        Vec3 ab = bodyB->m_position - bodyA->m_position;
+        float r = (pt_on_a - pt_on_b).GetMagnitude();
+        contact.separationDistance = r;
+
+        return false;
+    }
 
     const Vec3 ab = bodyB->m_position - bodyA->m_position;
     contact.normal = ab;
