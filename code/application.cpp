@@ -476,11 +476,15 @@ Application::Keyboard
 */
 void Application::Keyboard(int key, int scancode, int action, int modifiers)
 {
-    // 按F键生成新的球体
-    if (GLFW_KEY_F == key && GLFW_RELEASE == action)
+    if (GLFW_KEY_W == key/* && GLFW_RELEASE == action*/)
     {
-        //m_scene->AddShapeSphere();
+        m_camPos += Vec3(1, 0, 0);
     }
+    // 按F键生成新的球体
+    // if (GLFW_KEY_F == key && GLFW_RELEASE == action)
+    // {
+    //     //m_scene->AddShapeSphere();
+    // }
     // 按R键重置场景
     if (GLFW_KEY_R == key && GLFW_RELEASE == action)
     {
@@ -615,13 +619,14 @@ void Application::UpdateUniforms()
         // Update the uniform buffer with the camera information
         //
         {
-            Vec3 camPos = Vec3(100, 0, 5) * 1.25f;
-            auto camLookAt = Vec3(0, 0, 1);
+            //Vec3 camPos = Vec3(100, 0, 0) * 5.f;
+            Vec3 camPos = m_camPos;
+            auto camLookAt = Vec3(1, 0, 0);
             auto camUp = Vec3(0, 0, 1);
 
-            camPos.x = cosf(m_cameraPositionPhi) * sinf(m_cameraPositionTheta);
-            camPos.y = sinf(m_cameraPositionPhi) * sinf(m_cameraPositionTheta);
-            camPos.z = cosf(m_cameraPositionTheta);
+            camPos.x += cosf(m_cameraPositionPhi) * sinf(m_cameraPositionTheta);
+            camPos.y += sinf(m_cameraPositionPhi) * sinf(m_cameraPositionTheta);
+            camPos.z += cosf(m_cameraPositionTheta);
             camPos *= m_cameraRadius;
 
             camPos += m_cameraFocusPoint;
@@ -655,7 +660,7 @@ void Application::UpdateUniforms()
         // Update the uniform buffer with the shadow camera information
         //
         {
-            Vec3 camPos = Vec3(1, 1, 1) * 75.0f;
+            Vec3 camPos = Vec3(1, 1, 1) * 5.0f;
             auto camLookAt = Vec3(0, 0, 0);
             auto camUp = Vec3(0, 0, 1);
             Vec3 tmp = camPos.Cross(camUp);

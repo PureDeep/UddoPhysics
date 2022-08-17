@@ -224,7 +224,8 @@ void Scene::Update(const float dt_sec)
         accumulated_time += dt;
     }
 
-    // 跟新此帧时间剩下的位置
+
+    //更新此帧时间剩下的位置
     const float time_remaining = dt_sec - accumulated_time;
     if (time_remaining > 0.0f)
     {

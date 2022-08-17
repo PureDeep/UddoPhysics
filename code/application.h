@@ -70,6 +70,11 @@ private:
     Buffer m_uniformBuffer;
 
     //
+    //  Camera
+    //
+    Vec3 m_camPos = Vec3(1, 0, 1) * 1.25f;
+
+    //
     //	Model
     //
     Model m_modelFullScreen;
