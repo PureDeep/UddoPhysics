@@ -478,7 +478,19 @@ void Application::Keyboard(int key, int scancode, int action, int modifiers)
 {
     if (GLFW_KEY_W == key/* && GLFW_RELEASE == action*/)
     {
+        m_camPos += Vec3(-1, 0, 0);
+    }
+    if (GLFW_KEY_S == key/* && GLFW_RELEASE == action*/)
+    {
         m_camPos += Vec3(1, 0, 0);
+    }
+    if (GLFW_KEY_A == key/* && GLFW_RELEASE == action*/)
+    {
+        m_camPos += Vec3(0, 1, 0);
+    }
+    if (GLFW_KEY_D == key/* && GLFW_RELEASE == action*/)
+    {
+        m_camPos += Vec3(0, -1, 0);
     }
     // 按F键生成新的球体
     // if (GLFW_KEY_F == key && GLFW_RELEASE == action)
