@@ -124,17 +124,25 @@ void Scene::Initialize()
         }
     }
 
-    body.m_position = Vec3(0, 0, -10000);
-    body.m_orientation = Quat(0, 0, 0, 1);
-    body.m_inverseMass = 0.0f;
-    body.m_elasticity = 1.0f;
-    body.m_friction = 0.0f;
-    body.m_shape = new ShapeSphere(10000.0f);
-    m_bodies.push_back(body);
+    for (int x = 0; x < 3; x++)
+    {
+        for (int y = 0; y < 3; y++)
+        {
+            float radius = 80.0f;
+            float xx = static_cast<float>(x - 1) * radius * 0.25f;
+            float yy = static_cast<float>(y - 1) * radius * 0.25f;
+            body.m_position = Vec3(xx, yy, -radius);
+            body.m_orientation = Quat(0, 0, 0, 1);
+            body.m_linearVelocity.Zero();
+            body.m_inverseMass = 0.0f;
+            body.m_elasticity = 0.99f;
+            body.m_friction = 0.5f;
+            body.m_shape = new ShapeSphere(radius);
+            m_bodies.push_back(body);
+        }
+    }
 
     //AddStandardSandBox(m_bodies);
-
-    // TODO: Add code
 }
 
 // 用于在Scene::Update()中比较Contact的发生时间
