@@ -167,7 +167,7 @@ bool Intersect(const Body* body_a, const Body* body_b)
 }
 
 /**
- * \brief 射线与球体碰撞检测
+ * \brief 射线与球体碰撞检测，可以参考GAMES103 Lecture02 Example 4: Particale-Sphere Collision
  * \param ray_start 射线起始点
  * \param ray_dir 射线方向
  * \param sphere_center 球体中心坐标

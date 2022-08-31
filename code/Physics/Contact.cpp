@@ -50,8 +50,8 @@ void ResolveContact(contact_t& contact)
     const float impulse_j = -(1.0f + elasticity) * v_ab.Dot(n) / (inv_mass_a + inv_mass_b + angular_factor);
     const Vec3 vector_impulse_j = n * impulse_j;
 
-    body_a->ApplyImpulse(pt_a, vector_impulse_j * -1.0f);
-    body_b->ApplyImpulse(pt_b, vector_impulse_j * 1.0f);
+    body_a->ApplyImpulse(pt_a, vector_impulse_j * 1.0f);
+    body_b->ApplyImpulse(pt_b, vector_impulse_j * -1.0f);
 
     // 计算摩擦力产生的冲量
     const float friction_a = body_a->m_friction;

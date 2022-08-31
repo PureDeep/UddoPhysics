@@ -108,7 +108,7 @@ void Scene::Initialize()
 {
     Body body;
 
-    int x = 9, y = 9;
+    int x = 1, y = 2;
 
     for (int i = 0; i < x; i++)
     {
